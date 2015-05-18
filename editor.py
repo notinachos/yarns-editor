@@ -442,37 +442,6 @@ class PartSettings(wx.Panel):
 
         # add grid to panel
         self.SetSizer(grid)
-        '''
-        # text labels
-        txt_midiChannel = wx.StaticText(self, label='MIDI channel:')
-        txt_lowerNote = wx.StaticText(self, label='Lower note:')
-        txt_upperNote = wx.StaticText(self, label='Upper note:')
-        txt_midiOutMode = wx.StaticText(self, label='MIDI out mode:')
-        txt_voicing = wx.StaticText(self, label='Voicing:')
-        txt_notePriority = wx.StaticText(self, label='Note priority:')
-        txt_portamento = wx.StaticText(self, label='Portamento:')
-        txt_legato = wx.StaticText(self, label='Legato:')
-        txt_pitchBendRange = wx.StaticText(self, label='Pitch bend range:')
-        txt_vibratoRange = wx.StaticText(self, label='Vibrato range:')
-        txt_vibratoSpeed = wx.StaticText(self, label='Vibrato speed:')
-        txt_transpose = wx.StaticText(self, label='Transpose:')
-        txt_fineTuning = wx.StaticText(self, label='Fine tuning:')
-        txt_tuningRoot = wx.StaticText(self, label='Tuning root:')
-        txt_tuningSystem = wx.StaticText(self, label='Tuning system:')
-        txt_triggerDuration = wx.StaticText(self, label='Trigger duration:')
-        txt_velocityScale = wx.StaticText(self, label='Trigger velocity scale:')
-        txt_triggerShape = wx.StaticText(self, label='Trigger shape:')
-        txt_auxCvOut = wx.StaticText(self, label='Aux CV out:')
-        txt_oscShape = wx.StaticText(self, label='Oscillator shape:')
-        txt_arpClockDiv = wx.StaticText(self, label='Arp/Seq clock divider:')
-        txt_arpGateLength = wx.StaticText(self, label='Arp/Seq gate length:')
-        txt_arpRange = wx.StaticText(self, label='Arpeggiator range:')
-        txt_arpDirection = wx.StaticText(self, label='Arpeggiator direction:')
-        txt_arpPattern = wx.StaticText(self, label='Arpeggiator pattern:')
-        txt_eucLength = wx.StaticText(self, label='Euclidean length:')
-        txt_eucFill = wx.StaticText(self, label='Euclidean fill:')
-        txt_eucRotate = wx.StaticText(self, label='Euclidean rotate:')
-        '''
 
         # checkboxes/text labels
         chk_midiChannel = wx.CheckBox(self, label='MIDI channel:')
@@ -838,6 +807,8 @@ class PartSettings(wx.Panel):
             elif (box == 'Euclidean length:'): self.OnEucLengthSelect('random')
             elif (box == 'Euclidean fill:'): self.OnEucFillSelect('random')
             elif (box == 'Euclidean rotate:'): self.OnEucRotateSelect('random')
+            else:
+                raise ValueError('Incorrect value passed to PartSettings.OnRandomSelection()')
 
     def OnReset(self, event):
         ''' resets all values to defaults '''
@@ -1560,9 +1531,6 @@ class Window(wx.Frame):
 
         # help menu
         helpMenu = wx.Menu()
-        helpMenu_docs = helpMenu.Append(wx.ID_HELP, 'Documentation', 'Online Documentation')
-        self.Bind(wx.EVT_MENU, self.OnDocs, helpMenu_docs)
-
         helpMenu_about = helpMenu.Append(wx.ID_ABOUT, 'About', 'About editor')
         self.Bind(wx.EVT_MENU, self.OnAbout, helpMenu_about)
 
@@ -1575,9 +1543,6 @@ class Window(wx.Frame):
         ''' called when the user quits '''
         midiManager.CloseMIDI()
         self.Destroy()
-
-    def OnDocs(self, event):
-        print('todo: documentation menu!')
 
     def OnAbout(self, event):
         ''' Called when the user chooses "About" from the help menu '''
