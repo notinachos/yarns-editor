@@ -16,7 +16,8 @@ Usage is simple:
 * Randomize anything! Generate complex arpeggios and Euclidean patterns with the click of a button!
 * Prolong your encoder lifespan! Combined, there are over 1,000 potential values for EACH part, and Yarns has up to four parts. This program saves your encoder from a ton of clicking and spinning.
 
-## Python Dependencies:
+## Dependencies:
+* python2.7: https://www.python.org/
 * wxpython: http://www.wxpython.org/
 * pygame: http://www.pygame.org/
 * natsort: https://pypi.python.org/pypi/natsort
