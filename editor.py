@@ -46,26 +46,6 @@ import images
 # the editor only supports this firmware version
 firmware = str(1.02)
 
-# embedded icon
-icon = PyEmbeddedImage(
-    'iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAIAAAADnC86AAAAB3RJTUUH3wUOETczNbD0fAAA'
-    'ABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8A'
-    'AAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAC4ElEQVR4nMVYPWuUQRA+0qW7'
-    '7gSTWnIioqVWwSZGm+BviNiJYCOoRSS1laDYiij40cSPH2Bs8lHGUswhaBFyXTrjAw95nHdm'
-    '3929HOaW4djszjzPzs7s7rzp9O7dn4h0Jk98ZmW1XjL6GbQ08Z/DwxMQ0U11mu3ncLi1O6Co'
-    'j05SDb9tU1GcWsPjwf5+DMbtN+8wztlnX9YXnjx1mwbBIKaoBoFJxOFseqs3fuxaVRAAjuOA'
-    'rkkZqEEZJjB066slhhlVsXwLgT5GgCtxCtwk7pBdbhUxDKDnLAFHb5KCKbvDEaFMjOWjY204'
-    '4pjobqSXlbi5H2Viwll7h+7WpJySyHXaErZATFVZMlrRVxvR6LddNxF0NNLE9MZG2pIxp+Jp'
-    '4aBVcNwMnLtAEjeXTqriapm4dns1Mq00ok2SA3bbch5ntMlENSgoz91pjsEue6z42TSOxE7c'
-    'ObZJ7vKglZiBceg2m5KplFHgmpQuUvOPxPe9Pfwu9Ofs4PLlS2u3bq5cu4pf9P1131RYPNu3'
-    'U4QibPmR0Kp55fKabLuz3AmmixbBhrnVY9vwlj388Gl4cAB5tbX9fP1rRhkNCp93vkEZfRgm'
-    'nkLTcsTbg3+W3enpnV+/88RQIGs0H4344uys+kDsn+rliYsKjeaymhFSRBWh+hj3jp5ON3Kc'
-    '4zSOuOOkE++3eun8OW5sPjUqG0AYdcLa5ol1Cl9sbI5PLBB3uBPEp7vdCzMz6OD8jOk0yk2A'
-    'oANAwBaIof3o+iL7D9Y+jkO8/PI1OwJsNHdz6d0eKZnb0jsWAq3JxRvq8Y0lbfidt+/jcqEj'
-    'ibMw0SbfvTKPkPHPnMe9ozLKvvYs2/TSxYJeb2gsx6qKPT0SsnHlrRuRcGXHL28tsbiT3yNc'
-    'RHG2tqB3304qp+MnTHz15KhMRviEyX+0AUtfRI6Yl3OyOKwiJnoUV7Ln/2wDKTwS/1sSxDat'
-    '4kj+/wpRs828lfjEZGLEfwGsKC1a2zl3sAAAAABJRU5ErkJggg==')
-
 # information for the layout editor page
 info_1M = 'In this mode, Yarns offers a single voice of CV/Gate conversion.'
 
@@ -1515,7 +1495,7 @@ class Window(wx.Frame):
                           title='Yarns Editor',
                           size=(xSize,ySize),
                           style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
-        self.SetIcon(icon.GetIcon())
+        self.SetIcon(images.icon.GetIcon())
         self.Bind(wx.EVT_CLOSE, self.OnQuit)
         self.InitMenubar()
         self.InitGUI()
