@@ -41,6 +41,7 @@ import wx
 from wx.lib.embeddedimage import PyEmbeddedImage
 from natsort import natsorted
 import cc_values
+import images
 
 # the editor only supports this firmware version
 firmware = str(1.02)
@@ -298,9 +299,10 @@ class GlobalSettings(wx.Panel):
         self.sizer.Add(txt_layout)
         self.sizer.Add(self.cbox_layouts)
 
-        # default layout
-        png = wx.Image('layout_1M.png', wx.BITMAP_TYPE_ANY).ConvertToBitmap()
-        self.layout_image = wx.StaticBitmap(self, -1, png, (0,0), (png.GetWidth(), png.GetHeight()))
+        # default layout placeholders
+        image = images.layout_1M.GetBitmap()
+        self.layout_image = wx.StaticBitmap(self, -1, image, (0,0), (image.GetWidth(), image.GetHeight()))
+
         self.txt_info = wx.StaticText(self, label=info_1M)
         self.sizer.Add(wx.StaticText(self, label=''))
         self.sizer.Add(self.layout_image, 1, wx.ALIGN_CENTRE)
@@ -310,61 +312,60 @@ class GlobalSettings(wx.Panel):
         ''' changes the layout image/text. also enables/disables tabs '''
         # pick correct layout image
         if   (layout == '1M - Monophonic'):                
-            image = 'layout_1M.png'
+            newImage = images.layout_1M.GetBitmap()
             self.parent.OnPartChange(1)
             self.txt_info.SetLabel(info_1M)
 
         elif (layout == '2M - Dual monophonic'):           
-            image = 'layout_2M.png'
+            newImage = images.layout_2M.GetBitmap()
             self.parent.OnPartChange(2)
             self.txt_info.SetLabel(info_2M)
 
         elif (layout == '4M - Quad monophonic'):           
-            image = 'layout_4M.png'
+            newImage = images.layout_4M.GetBitmap()
             self.parent.OnPartChange(4)
             self.txt_info.SetLabel(info_4M)
 
         elif (layout == '2P - Duophonic'):                 
-            image = 'layout_2P.png'
-            self.parent.OnPartChange(2)
+            newImage = images.layout_2P.GetBitmap()
+            self.parent.OnPartChange(1)
             self.txt_info.SetLabel(info_2P)
 
         elif (layout == '4P - Quadraphonic'):              
-            image = 'layout_4P.png'
-            self.parent.OnPartChange(4)
+            newImage = images.layout_4P.GetBitmap()
+            self.parent.OnPartChange(1)
             self.txt_info.SetLabel(info_4poly)
 
         elif (layout == '2> - Duophonic polychaining'):    
-            image = 'layout_2P_chain.png'
-            self.parent.OnPartChange(2)
+            newImage = images.layout_2P_chain.GetBitmap()
+            self.parent.OnPartChange(1)
             self.txt_info.SetLabel(info_2poly)
 
         elif (layout == '4> - Quadraphonic polychaining'): 
-            image = 'layout_4P_chain.png'
-            self.parent.OnPartChange(4)
+            newImage = images.layout_4P_chain.GetBitmap()
+            self.parent.OnPartChange(1)
             self.txt_info.SetLabel(info_4poly)
 
         elif (layout == '8> - Octophonic polychaining'):   
-            image = 'layout_8P_chain.png'
-            self.parent.OnPartChange(4)
+            newImage = images.layout_8P_chain.GetBitmap()
+            self.parent.OnPartChange(1)
             self.txt_info.SetLabel(info_8poly)
 
         elif (layout == '4T - Quad trigger'):              
-            image = 'layout_4T.png'
+            newImage = images.layout_4T.GetBitmap()
             self.parent.OnPartChange(4)
             self.txt_info.SetLabel(info_4trig)
 
         elif (layout == '3+ - Three plus one'):            
-            image = 'layout_3plus.png'
+            newImage = images.layout_3plus.GetBitmap()
             self.parent.OnPartChange(2)
             self.txt_info.SetLabel(info_3plus)
 
         else:
             raise ValueError('Incorrect value passed to GlobalSettings.ChangeLayout()')
 
-        # convert to bmp and display image
-        png = wx.Image(image, wx.BITMAP_TYPE_ANY).ConvertToBitmap()
-        self.layout_image.SetBitmap(png)
+        # set the new display image
+        self.layout_image.SetBitmap(newImage)
 
         # refresh layout
         self.sizer.Layout()
@@ -1471,6 +1472,7 @@ class Editor(wx.Notebook):
             except: pass
             try: self.DeletePage(2)
             except: pass
+
         elif (number_of_parts == 2):
             # remove parts 3 and 4 if they exist
             try: self.DeletePage(4)
@@ -1481,12 +1483,23 @@ class Editor(wx.Notebook):
                 page_part2 = PartSettings(self, 2)
                 self.AddPage(page_part2, 'Part 2')
                 page_part2.SendDefaults()
+
         elif (number_of_parts == 4):
-            if (self.GetPageCount() == 2 or self.GetPageCount() == 3):
+            if (self.GetPageCount() == 3):
                 page_part3 = PartSettings(self, 3)
                 page_part4 = PartSettings(self, 4)
                 self.AddPage(page_part3, 'Part 3')
                 self.AddPage(page_part4, 'Part 4')
+                page_part3.SendDefaults()
+                page_part4.SendDefaults()
+            elif (self.GetPageCount() == 2):
+                page_part2 = PartSettings(self, 2)
+                page_part3 = PartSettings(self, 3)
+                page_part4 = PartSettings(self, 4)
+                self.AddPage(page_part2, 'Part 2')
+                self.AddPage(page_part3, 'Part 3')
+                self.AddPage(page_part4, 'Part 4')
+                page_part2.SendDefaults()
                 page_part3.SendDefaults()
                 page_part4.SendDefaults()
         else: 
