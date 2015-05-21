@@ -1,4 +1,3 @@
-#!/usr/bin/python2
 # -*- coding: utf-8 -*-
 
 license = '''
@@ -105,7 +104,7 @@ default_portamento = '0'
 default_pitchBendRange = '2'
 default_vibratoRange = '1'
 default_fineTuning = '0'
-default_oscillator = 'Sawtooth'
+default_oscillator = 'Off'
 default_priority = 'Last'
 default_voicing = 'Poly'
 default_mode = 'Off'
@@ -1444,6 +1443,7 @@ class Editor(wx.Notebook):
 
     def OnPartChange(self, number_of_parts):
         ''' enables/disables tabs as layouts are changed '''
+        #TODO: clean this up. sloppy
         if (number_of_parts == 1):
             # remove parts 2, 3, and 4 if they exist
             try: self.DeletePage(4)
@@ -1452,7 +1452,6 @@ class Editor(wx.Notebook):
             except: pass
             try: self.DeletePage(2)
             except: pass
-
         elif (number_of_parts == 2):
             # remove parts 3 and 4 if they exist
             try: self.DeletePage(4)
@@ -1463,7 +1462,6 @@ class Editor(wx.Notebook):
                 page_part2 = PartSettings(self, 2)
                 self.AddPage(page_part2, 'Part 2')
                 page_part2.SendDefaults()
-
         elif (number_of_parts == 4):
             if (self.GetPageCount() == 3):
                 page_part3 = PartSettings(self, 3)
@@ -1488,7 +1486,6 @@ class Editor(wx.Notebook):
 
 class Window(wx.Frame):
     ''' the application window. '''
-    #def __init__(self, xSize=560, ySize=540):
     def __init__(self, xSize=600, ySize=540):
         wx.Frame.__init__(self, 
                           parent=None,
@@ -1540,9 +1537,9 @@ class Window(wx.Frame):
     def OnAbout(self, event):
         ''' Called when the user chooses "About" from the help menu '''
         info = wx.AboutDialogInfo()
-        info.SetIcon(icon.GetIcon())
+        info.SetIcon(images.icon.GetIcon())
         info.Name = 'Yarns Editor'
-        info.Version = '1.0'
+        info.Version = '0.8'
         info.Copyright = '(C) 2015 Panagiotis Peppas'
         info.License = license
         info.Description = 'A MIDI editor for Mutable Instruments Yarns.'
@@ -1553,8 +1550,8 @@ if __name__ == '__main__':
     global midiManager
     # fixes the Windows taskbar icon
     if (platform.system().lower() == 'windows'):
-        myappid = 'mycompany.myproduct.subproduct.version' # arbitrary string
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        appID = 'Yarns Editor'
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appID)
     midiManager = MidiManager()
     midiManager.SetChannel(default_remoteChannel)
     app = wx.App()
