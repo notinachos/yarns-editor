@@ -1425,7 +1425,7 @@ class Editor(wx.Notebook):
 
         # delete the editor options page, as 
         # its values can no longer be changed
-        self.DeletePage(0)
+        self.KillPage('Editor')
 
          # add yarns options
         page_global = GlobalSettings(self)
@@ -1441,29 +1441,33 @@ class Editor(wx.Notebook):
         page_global.SendDefaults()
         page_part1.SendDefaults()
 
+    def KillPage(self, pageText):
+        ''' removes a notebook page based on its page label '''
+        for index in range(self.GetPageCount()):
+            if self.GetPageText(index) == pageText:
+                self.DeletePage(index)
+                self.SendSizeEvent()
+                break
+
     def OnPartChange(self, number_of_parts):
         ''' enables/disables tabs as layouts are changed '''
-        #TODO: clean this up. sloppy
         if (number_of_parts == 1):
             # remove parts 2, 3, and 4 if they exist
-            try: self.DeletePage(4)
-            except: pass
-            try: self.DeletePage(3)
-            except: pass
-            try: self.DeletePage(2)
-            except: pass
+            self.KillPage('Part 2')
+            self.KillPage('Part 3')
+            self.KillPage('Part 4')
         elif (number_of_parts == 2):
             # remove parts 3 and 4 if they exist
-            try: self.DeletePage(4)
-            except: pass
-            try: self.DeletePage(3)
-            except: pass
+            self.KillPage('Part 3')
+            self.KillPage('Part 4')
+            # add page 2 if it doesn't exist
             if (self.GetPageCount() == 2):
                 page_part2 = PartSettings(self, 2)
                 self.AddPage(page_part2, 'Part 2')
-                page_part2.SendDefaults()
+                page_part2.SendDefaults()      
         elif (number_of_parts == 4):
             if (self.GetPageCount() == 3):
+                # add parts 3 and 4 if they don't exist
                 page_part3 = PartSettings(self, 3)
                 page_part4 = PartSettings(self, 4)
                 self.AddPage(page_part3, 'Part 3')
@@ -1471,6 +1475,7 @@ class Editor(wx.Notebook):
                 page_part3.SendDefaults()
                 page_part4.SendDefaults()
             elif (self.GetPageCount() == 2):
+                # add parts 2, 3, and 4 if they don't exist
                 page_part2 = PartSettings(self, 2)
                 page_part3 = PartSettings(self, 3)
                 page_part4 = PartSettings(self, 4)
