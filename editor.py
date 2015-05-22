@@ -1485,13 +1485,13 @@ class Window(wx.Frame):
 
         # file menu
         fileMenu = wx.Menu()
-        fileMenu_quit = fileMenu.Append(wx.ID_EXIT, 'Quit', 'Quit editor')
-        self.Bind(wx.EVT_MENU, self.OnQuit, fileMenu_quit)
+        fileMenu_quit = fileMenu.Append(wx.ID_EXIT, '&Quit editor')
+        self.Bind(wx.EVT_MENU, self.OnQuit, id=wx.ID_EXIT)
 
         # help menu
         helpMenu = wx.Menu()
-        helpMenu_about = helpMenu.Append(wx.ID_ABOUT, 'About', 'About editor')
-        self.Bind(wx.EVT_MENU, self.OnAbout, helpMenu_about)
+        helpMenu_about = helpMenu.Append(wx.ID_ABOUT, '&About Yarns Editor')
+        self.Bind(wx.EVT_MENU, self.OnAbout, id=wx.ID_ABOUT)
 
         # add items to menubar
         menubar.Append(fileMenu, '&File')
