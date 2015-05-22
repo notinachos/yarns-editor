@@ -1541,7 +1541,7 @@ class Window(wx.Frame):
         info = wx.AboutDialogInfo()
         info.SetIcon(images.icon.GetIcon())
         info.Name = 'Yarns Editor'
-        info.Version = '0.8'
+        info.Version = '0.9'
         info.Copyright = '(C) 2015 Panagiotis Peppas'
         info.License = license
         info.Description = 'A MIDI editor for Mutable Instruments Yarns.'
