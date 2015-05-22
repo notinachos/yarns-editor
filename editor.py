@@ -136,6 +136,7 @@ class MidiManager(object):
         self.midi_output = None
         self.port_in = None
         self.port_out = None
+        self.locked = False
 
     def ListMIDI(self, portDirection):
         ''' populates a list of available midi devices '''
@@ -163,15 +164,22 @@ class MidiManager(object):
 
     def SetInput(self, device):
         ''' sets the midi input device '''
-        self.midi_input = device
+        if (self.locked == False):
+            self.midi_input = device
 
     def SetOutput(self, device):
         ''' sets the midi output device '''
-        self.midi_output = device
+        if (self.locked == False): 
+            self.midi_output = device
 
     def SetChannel(self, channel):
         ''' sets the midi channel '''
-        self.midi_channel = (int(channel) - 1) # mido port numbers are 0-15
+        if (self.locked == False): 
+            self.midi_channel = (int(channel) - 1) # mido port numbers are 0-15
+
+    def Lock(self):
+        ''' locks the midi manager from further changes '''
+        self.locked = True
 
     def OpenMIDI(self):
         ''' opens midi ports for reading/writing '''
@@ -249,7 +257,7 @@ class GlobalSettings(wx.Panel):
         self.txt_info = wx.StaticText(self, label=info_1M)
         self.sizer.Add(wx.StaticText(self, label=''))
         self.sizer.Add(self.layout_image, 1, wx.ALIGN_CENTRE)
-        self.sizer.Add(self.txt_info, 2, wx.ALIGN_CENTRE)
+        self.sizer.Add(self.txt_info, 0, wx.ALIGN_CENTRE)
 
     def ChangeLayout(self, layout):
         ''' changes the layout image/text. also enables/disables tabs '''
@@ -378,11 +386,11 @@ class PartSettings(wx.Panel):
         self.checkedBoxes = []
         # setup the GUI
         self.InitGUI()
-
+        
     def InitGUI(self):
         ''' initializes the graphic elements '''
         # rows, columns, vertical gap, horizontal gap
-        grid = wx.FlexGridSizer(28, 4, 8, 16)
+        grid = wx.FlexGridSizer(28, 4, 8, 8)
 
         # add grid to panel
         self.SetSizer(grid)
@@ -1313,12 +1321,13 @@ class EditorSettings(wx.Panel):
         txt_midi_in = wx.StaticText(self, label='MIDI Input Device:')
         listbox_midi_in = wx.ListBox(self)
         listbox_midi_in.Bind(wx.EVT_LISTBOX, self.OnInputClick)
-        listbox_midi_in.SetMinSize((0, 200)) # other listbox grows to match this
+        listbox_midi_in.SetMinSize((0, 200))
 
         # midi output devices
         txt_midi_out = wx.StaticText(self, label='MIDI Output Device:')
         listbox_midi_out = wx.ListBox(self)
         listbox_midi_out.Bind(wx.EVT_LISTBOX, self.OnOutputClick)
+        listbox_midi_in.SetMinSize((0, 200))
 
         # remote control channel
         txt_channel = wx.StaticText(self, label='MIDI RC Channel:')
@@ -1343,8 +1352,8 @@ class EditorSettings(wx.Panel):
 
         # add grid sizer to sizer
         self.sizer.Add(grid, 1, wx.EXPAND)
-        self.sizer.Add(txt_notes, 1, wx.EXPAND)
-        self.sizer.Add(self.btn_confirm, 1, wx.ALIGN_RIGHT)
+        self.sizer.Add(txt_notes, 0, wx.EXPAND)
+        self.sizer.Add(self.btn_confirm, 0, wx.ALIGN_RIGHT)
 
         # populate MIDI information
         for midi_device in midiManager.ListMIDI('inputs'):
@@ -1387,6 +1396,12 @@ class Editor(wx.Notebook):
 
     def OnConfirm(self):
         ''' confirms midi device selection '''
+        
+        # no further changes to midiManager allowed
+        midiManager.Lock()
+        
+        # open midi ports
+        midiManager.OpenMIDI()
 
         # delete the editor options page, as 
         # its values can no longer be changed
@@ -1398,9 +1413,6 @@ class Editor(wx.Notebook):
 
         self.AddPage(page_global, 'Global')
         self.AddPage(page_part1, 'Part 1')
-
-        # open midi ports
-        midiManager.OpenMIDI()
 
         # init to default values
         page_global.SendDefaults()
@@ -1469,15 +1481,12 @@ class Window(wx.Frame):
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appID)
             xSize = 600
             ySize = 560
-
         elif (os == 'darwin'):
             xSize = 690
             ySize = 570
-
         elif (os == 'linux'):
-            xSize = 690
+            xSize = 740
             ySize = 570
-
         else:
             xSize = 600
             ySize = 560
@@ -1509,7 +1518,7 @@ class Window(wx.Frame):
 
         # file menu
         fileMenu = wx.Menu()
-        fileMenu_quit = fileMenu.Append(wx.ID_EXIT, '&Quit editor')
+        fileMenu_quit = fileMenu.Append(wx.ID_EXIT, '&Quit Yarns Editor')
         self.Bind(wx.EVT_MENU, self.OnQuit, id=wx.ID_EXIT)
 
         # help menu
