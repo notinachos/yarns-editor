@@ -35,7 +35,7 @@ import sys
 import platform
 import ctypes
 import random
-import pygame.midi
+import mido
 import wx
 from wx.lib.embeddedimage import PyEmbeddedImage
 from natsort import natsorted
@@ -130,41 +130,31 @@ default_vibratoSpeed = '50'
 class MidiManager(object):
     ''' handles midi events '''
     def __init__(self):
-        self.midi_input_id = None
-        self.midi_output_id = None
         self.midi_channel = None
         self.midi_input = None
         self.midi_output = None
-        
-    def InitMIDI(self):
-        ''' initializes pygame's midi module '''
-        pygame.midi.init()
+        self.port_in = None
+        self.port_out = None
 
     def ListMIDI(self, portDirection):
         ''' populates a list of available midi devices '''
         midiDevices = [] # list to store found devices
         # parse midi devices
-        for x in range(0, pygame.midi.get_count()):
-            currentDevice = pygame.midi.get_device_info(x)
-            # find midi inputs and add them to the list
-            if (portDirection == 'inputs'):
-                if (currentDevice[2] == 1):
-                    midiDevices.append(currentDevice)
-            # find midi outputs and add them to the list
-            elif (portDirection == 'outputs'):
-                if (currentDevice[3] == 1):
-                    midiDevices.append(currentDevice)
-            else: 
-                raise ValueError('Incorrect value passed to ListMIDI()')
+        if (portDirection == 'inputs'):
+            midiDevices = mido.get_input_names()
+        elif (portDirection == 'outputs'):
+            midiDevices = mido.get_output_names()
+        else: 
+            raise ValueError('Incorrect value passed to ListMIDI()')
         return midiDevices
 
     def GetInput(self):
         ''' returns the current midi input device '''
-        return self.midi_input_id
+        return self.midi_input
 
     def GetOutput(self):
         ''' returns the current midi output device '''
-        return self.midi_output_id
+        return self.midi_output
 
     def GetChannel(self):
         ''' returns the current midi channel in use '''
@@ -172,63 +162,36 @@ class MidiManager(object):
 
     def SetInput(self, device):
         ''' sets the midi input device '''
-        # iterate through midi devices
-        for x in range(0, pygame.midi.get_count()):
-            currentDevice = pygame.midi.get_device_info(x)
-            # search for a matching device name that is also a midi input
-            if (currentDevice[1] == device and currentDevice[2] == 1):
-                # set the device ID as the midi input
-                self.midi_input_id = x
+        self.midi_input = device
 
     def SetOutput(self, device):
         ''' sets the midi output device '''
-        # iterate through midi devices
-        for x in range(0, pygame.midi.get_count()):
-            currentDevice = pygame.midi.get_device_info(x)
-            # search for a matching device name that is also a midi output
-            if (currentDevice[1] == device and currentDevice[3] == 1):
-                # set the device ID as the midi output
-                self.midi_output_id = x
+        self.midi_output = device
 
     def SetChannel(self, channel):
         ''' sets the midi channel '''
-        self.midi_channel = int(channel)
+        self.midi_channel = (int(channel) - 1) # mido port numbers are 0-15
 
     def OpenMIDI(self):
         ''' opens midi ports for reading/writing '''
         if (midiManager.GetInput() != None): # midi input is optional
-            self.midi_input = pygame.midi.Input(self.midi_input_id)
-        self.midi_output = pygame.midi.Output(self.midi_output_id)
+            self.port_in = mido.open_input(self.midi_input)
+        self.port_out = mido.open_output(self.midi_output)
 
     def CloseMIDI(self):
         ''' closes open midi ports and shuts down the midi module '''
         if (self.midi_input): del self.midi_input
         if (self.midi_output): del self.midi_output
-        pygame.midi.quit()
 
     def SendCC(self, controller, value):
         ''' sends data the the MIDI output '''
-        # 1st byte changes depending on the midi channel
-        if   (self.midi_channel == 1):  byte1 = 0xB0
-        elif (self.midi_channel == 2):  byte1 = 0xB1
-        elif (self.midi_channel == 3):  byte1 = 0xB2
-        elif (self.midi_channel == 4):  byte1 = 0xB3
-        elif (self.midi_channel == 5):  byte1 = 0xB4
-        elif (self.midi_channel == 6):  byte1 = 0xB5
-        elif (self.midi_channel == 7):  byte1 = 0xB6
-        elif (self.midi_channel == 8):  byte1 = 0xB7
-        elif (self.midi_channel == 9):  byte1 = 0xB8
-        elif (self.midi_channel == 10): byte1 = 0xB9
-        elif (self.midi_channel == 11): byte1 = 0xBA
-        elif (self.midi_channel == 12): byte1 = 0xBB
-        elif (self.midi_channel == 13): byte1 = 0xBC
-        elif (self.midi_channel == 14): byte1 = 0xBD
-        elif (self.midi_channel == 15): byte1 = 0xBE
-        elif (self.midi_channel == 16): byte1 = 0xBF
-        else:
-            raise ValueError('Incorrect value passed to MidiManager.SendCC()')
-        # send CC 
-        self.midi_output.write_short(byte1, controller, value)
+        # construct message
+        msg = mido.Message('control_change', 
+                           channel=self.midi_channel, 
+                           control=controller,
+                           value=value)
+        # send cc
+        self.port_out.send(msg)
 
 
 class GlobalSettings(wx.Panel):
@@ -1340,7 +1303,9 @@ class EditorSettings(wx.Panel):
 
         # rows, columns, vertical gap, horizontal gap
         grid = wx.FlexGridSizer(28, 2, 8, 16)
-        grid.AddGrowableCol(0,2)
+
+        # column, proportion
+        grid.AddGrowableCol(0,1)
         grid.AddGrowableCol(1,1)
 
         # midi input devices
@@ -1363,7 +1328,6 @@ class EditorSettings(wx.Panel):
         txt_notes = wx.StaticText(self, label='Set MIDI channel to match Yarns RC channel.\n' + 
                                               'Restart program to refresh attached devices.\n' +
                                               'This program only supports firmware %s' %(firmware))
-
         # select button
         self.btn_confirm = wx.Button(self, label='Confirm Settings')
         self.btn_confirm.Bind(wx.EVT_BUTTON, self.OnConfirm)
@@ -1381,12 +1345,11 @@ class EditorSettings(wx.Panel):
         self.sizer.Add(self.btn_confirm, 1, wx.ALIGN_RIGHT)
 
         # populate MIDI information
-        midiManager.InitMIDI()
         for midi_device in midiManager.ListMIDI('inputs'):
-            listbox_midi_in.Append(midi_device[1])
+            listbox_midi_in.Append(midi_device)
 
         for midi_device in midiManager.ListMIDI('outputs'):
-            listbox_midi_out.Append(midi_device[1])          
+            listbox_midi_out.Append(midi_device)          
 
     def OnRemoteChannelSelect(self, event):
         ''' selects the midi channel '''
@@ -1444,7 +1407,7 @@ class Editor(wx.Notebook):
     def KillPage(self, pageText):
         ''' removes a notebook page based on its page label '''
         for index in range(self.GetPageCount()):
-            if self.GetPageText(index) == pageText:
+            if (self.GetPageText(index) == pageText):
                 self.DeletePage(index)
                 self.SendSizeEvent()
                 break
@@ -1491,12 +1454,13 @@ class Editor(wx.Notebook):
 
 class Window(wx.Frame):
     ''' the application window. '''
-    def __init__(self, xSize=600, ySize=540):
+    def __init__(self, xSize=600, ySize=560):
         wx.Frame.__init__(self, 
                           parent=None,
                           title='Yarns Editor',
                           size=(xSize,ySize),
-                          style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
+                          style=wx.DEFAULT_FRAME_STYLE)
+        self.SetMinSize((xSize, ySize))
         self.SetIcon(images.icon.GetIcon())
         self.Bind(wx.EVT_CLOSE, self.OnQuit)
         self.InitMenubar()
