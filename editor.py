@@ -36,6 +36,7 @@ import platform
 import ctypes
 import random
 import mido
+import mido.backends.portmidi
 import wx
 from wx.lib.embeddedimage import PyEmbeddedImage
 from natsort import natsorted
@@ -1476,6 +1477,10 @@ class Window(wx.Frame):
         elif (os == 'linux'):
             xSize = 690
             ySize = 570
+
+        else:
+            xSize = 600
+            ySize = 560
 
         # TODO: dynamically set correct sizes
         self.SetSize((xSize, ySize))
