@@ -1312,6 +1312,7 @@ class EditorSettings(wx.Panel):
         txt_midi_in = wx.StaticText(self, label='MIDI Input Device:')
         listbox_midi_in = wx.ListBox(self)
         listbox_midi_in.Bind(wx.EVT_LISTBOX, self.OnInputClick)
+        listbox_midi_in.SetMinSize((0, 200)) # other listbox grows to match this
 
         # midi output devices
         txt_midi_out = wx.StaticText(self, label='MIDI Output Device:')
@@ -1454,12 +1455,30 @@ class Editor(wx.Notebook):
 
 class Window(wx.Frame):
     ''' the application window. '''
-    def __init__(self, xSize=600, ySize=560):
+    def __init__(self):
         wx.Frame.__init__(self, 
                           parent=None,
                           title='Yarns Editor',
-                          size=(xSize,ySize),
                           style=wx.DEFAULT_FRAME_STYLE)
+
+        # platform specific tweaks
+        os = platform.system().lower()
+        if (os == 'windows'):
+            appID = 'Yarns Editor'
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appID)
+            xSize = 600
+            ySize = 560
+
+        elif (os == 'darwin'):
+            xSize = 690
+            ySize = 570
+
+        elif (os == 'linux'):
+            xSize = 690
+            ySize = 570
+
+        # TODO: dynamically set correct sizes
+        self.SetSize((xSize, ySize))
         self.SetMinSize((xSize, ySize))
         self.SetIcon(images.icon.GetIcon())
         self.Bind(wx.EVT_CLOSE, self.OnQuit)
@@ -1517,12 +1536,12 @@ class Window(wx.Frame):
 
 if __name__ == '__main__':
     global midiManager
-    # fixes the Windows taskbar icon
-    if (platform.system().lower() == 'windows'):
-        appID = 'Yarns Editor'
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appID)
+
+    # handles midi events
     midiManager = MidiManager()
     midiManager.SetChannel(default_remoteChannel)
+
+    # the wx app
     app = wx.App()
     frame = Window()
     app.MainLoop()
