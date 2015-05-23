@@ -126,6 +126,7 @@ default_triggerShape = 'Square'
 default_auxCV = 'Aftertouch CC#2'
 default_vibratoSpeed = '50'
 
+
 class MidiManager():
     ''' handles midi events '''
     def __init__(self):
@@ -163,18 +164,17 @@ class MidiManager():
         self.midi_channel = int(channel)
 
     def OpenMIDI(self):
-        ''' opens midi ports for reading/writing '''
-        # look up the input port by the index, and open it
-        self.midi_input_device.open_port(
-            self.midi_input_device.ports.index(self.midi_input_port))
-        # look up the output port by the index, and open it
+        ''' looks up the ports by the index, and opens them '''
+        if (self.midi_input_port): # midi input device is optional
+            self.midi_input_device.open_port(
+                self.midi_input_device.ports.index(self.midi_input_port))
         self.midi_output_device.open_port(
             self.midi_output_device.ports.index(self.midi_output_port))
 
     def CloseMIDI(self):
-        ''' closes open midi ports '''
-        if (self.midi_input_device): del self.midi_input_device
-        if (self.midi_output_device): del self.midi_output_device
+        ''' looks up the open ports by the index, and closes them '''
+        if (self.midi_input_port): self.midi_input_device.close_port()
+        if (self.midi_output_port): self.midi_output_device.close_port()
 
     def SendCC(self, controller, value):
         ''' sends data the the MIDI output '''
@@ -201,8 +201,8 @@ class MidiManager():
         self.midi_output_device.send_message([byte1, controller, value])
 
 
-class GlobalSettings(wx.Panel):
-    ''' the configuration page for global options '''
+class LayoutSettings(wx.Panel):
+    ''' the configuration page for layout options '''
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
         self.parent = parent
@@ -311,7 +311,7 @@ class GlobalSettings(wx.Panel):
             self.txt_info.SetLabel(info_3plus)
 
         else:
-            raise ValueError('Incorrect value passed to GlobalSettings.ChangeLayout()')
+            raise ValueError('Incorrect value passed to LayoutSettings.ChangeLayout()')
 
         # set the new display image
         self.layout_image.SetBitmap(newImage)
@@ -1371,7 +1371,7 @@ class EditorSettings(wx.Panel):
     def OnConfirm(self, event):
         ''' locks the midi output/channel coice for the session '''
         # midi output device is required
-        if (midiManager.midi_output_device == None):
+        if (midiManager.midi_output_port == None):
             errorMsg = wx.MessageDialog(None, 'You must select a MIDI output device!', 'Error', 
                 wx.OK | wx.ICON_ERROR)
             errorMsg.ShowModal()
@@ -1397,23 +1397,13 @@ class Editor(wx.Notebook):
     def OnConfirm(self):
         ''' confirms midi device selection '''
 
-        # open midi ports
+        # close/re open midi ports
+        midiManager.CloseMIDI()
         midiManager.OpenMIDI()
 
-        # delete the editor options page, as 
-        # its values can no longer be changed
-        self.KillPage('Editor')
-
-         # add yarns options
-        page_global = GlobalSettings(self)
-        page_part1 = PartSettings(self, 1)
-
-        self.AddPage(page_global, 'Global')
-        self.AddPage(page_part1, 'Part 1')
-
-        # init to default values
-        page_global.SendDefaults()
-        page_part1.SendDefaults()
+         # add layout panel
+        self.OnPartChange(0)
+        self.ChangeSelection(1)
 
     def KillPage(self, pageText):
         ''' removes a notebook page based on its page label '''
@@ -1425,22 +1415,36 @@ class Editor(wx.Notebook):
 
     def OnPartChange(self, number_of_parts):
         ''' enables/disables tabs as layouts are changed '''
-        if (number_of_parts == 1):
+        if (number_of_parts == 0):
+            # add the layout panel if it doesn't exist
+            if (self.GetPageCount() == 1):
+                page_layout = LayoutSettings(self)
+                self.AddPage(page_layout, 'Layout')
+                page_layout.SendDefaults()
+
+        elif (number_of_parts == 1):
             # remove parts 2, 3, and 4 if they exist
             self.KillPage('Part 2')
             self.KillPage('Part 3')
             self.KillPage('Part 4')
+            # add page 1 if it doesn't exist
+            if (self.GetPageCount() == 2):
+                page_part1 = PartSettings(self, 1)
+                self.AddPage(page_part1, 'Part 1')
+                page_part1.SendDefaults()
+
         elif (number_of_parts == 2):
             # remove parts 3 and 4 if they exist
             self.KillPage('Part 3')
             self.KillPage('Part 4')
             # add page 2 if it doesn't exist
-            if (self.GetPageCount() == 2):
+            if (self.GetPageCount() == 3):
                 page_part2 = PartSettings(self, 2)
                 self.AddPage(page_part2, 'Part 2')
-                page_part2.SendDefaults()      
+                page_part2.SendDefaults()
+
         elif (number_of_parts == 4):
-            if (self.GetPageCount() == 3):
+            if (self.GetPageCount() == 4):
                 # add parts 3 and 4 if they don't exist
                 page_part3 = PartSettings(self, 3)
                 page_part4 = PartSettings(self, 4)
@@ -1448,7 +1452,7 @@ class Editor(wx.Notebook):
                 self.AddPage(page_part4, 'Part 4')
                 page_part3.SendDefaults()
                 page_part4.SendDefaults()
-            elif (self.GetPageCount() == 2):
+            elif (self.GetPageCount() == 3):
                 # add parts 2, 3, and 4 if they don't exist
                 page_part2 = PartSettings(self, 2)
                 page_part3 = PartSettings(self, 3)
