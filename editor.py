@@ -35,8 +35,7 @@ import sys
 import platform
 import ctypes
 import random
-import mido
-import mido.backends.portmidi
+import rtmidi_python as rtmidi
 import wx
 from wx.lib.embeddedimage import PyEmbeddedImage
 from natsort import natsorted
@@ -127,80 +126,79 @@ default_triggerShape = 'Square'
 default_auxCV = 'Aftertouch CC#2'
 default_vibratoSpeed = '50'
 
-
-class MidiManager(object):
+class MidiManager():
     ''' handles midi events '''
     def __init__(self):
         self.midi_channel = None
-        self.midi_input = None
-        self.midi_output = None
-        self.port_in = None
-        self.port_out = None
-        self.locked = False
+        self.midi_input_device = None
+        self.midi_output_device = None
+        self.midi_input_port = None
+        self.midi_output_port = None
+
+    def InitMIDI(self):
+        ''' initializes midi '''
+        self.midi_input_device = rtmidi.MidiIn()
+        self.midi_output_device = rtmidi.MidiOut()
 
     def ListMIDI(self, portDirection):
-        ''' populates a list of available midi devices '''
-        midiDevices = [] # list to store found devices
-        # parse midi devices
-        if (portDirection == 'inputs'):
-            midiDevices = mido.get_input_names()
-        elif (portDirection == 'outputs'):
-            midiDevices = mido.get_output_names()
-        else: 
-            raise ValueError('Incorrect value passed to ListMIDI()')
+        ''' returns a list of available midi devices '''
+        if (portDirection == 'input'):
+            midiDevices = self.midi_input_device.ports
+        elif (portDirection == 'output'):
+            midiDevices = self.midi_output_device.ports
+        else:
+            raise ValueError('Incorrect value passed to MidiManager.ListMIDI()')
         return midiDevices
 
-    def GetInput(self):
-        ''' returns the current midi input device '''
-        return self.midi_input
+    def SetInput(self, deviceName):
+        ''' sets the midi input port to use '''
+        self.midi_input_port = deviceName
 
-    def GetOutput(self):
-        ''' returns the current midi output device '''
-        return self.midi_output
-
-    def GetChannel(self):
-        ''' returns the current midi channel in use '''
-        return self.midi_channel
-
-    def SetInput(self, device):
-        ''' sets the midi input device '''
-        if (self.locked == False):
-            self.midi_input = device
-
-    def SetOutput(self, device):
-        ''' sets the midi output device '''
-        if (self.locked == False): 
-            self.midi_output = device
+    def SetOutput(self, deviceName):
+        ''' sets the midi output port to use '''
+        self.midi_output_port = deviceName
 
     def SetChannel(self, channel):
-        ''' sets the midi channel '''
-        if (self.locked == False): 
-            self.midi_channel = (int(channel) - 1) # mido port numbers are 0-15
-
-    def Lock(self):
-        ''' locks the midi manager from further changes '''
-        self.locked = True
+        ''' sets the midi channel to use '''
+        self.midi_channel = int(channel)
 
     def OpenMIDI(self):
         ''' opens midi ports for reading/writing '''
-        if (midiManager.GetInput() != None): # midi input is optional
-            self.port_in = mido.open_input(self.midi_input)
-        self.port_out = mido.open_output(self.midi_output)
+        # look up the input port by the index, and open it
+        self.midi_input_device.open_port(
+            self.midi_input_device.ports.index(self.midi_input_port))
+        # look up the output port by the index, and open it
+        self.midi_output_device.open_port(
+            self.midi_output_device.ports.index(self.midi_output_port))
 
     def CloseMIDI(self):
-        ''' closes open midi ports and shuts down the midi module '''
-        if (self.midi_input): del self.midi_input
-        if (self.midi_output): del self.midi_output
+        ''' closes open midi ports '''
+        if (self.midi_input_device): del self.midi_input_device
+        if (self.midi_output_device): del self.midi_output_device
 
     def SendCC(self, controller, value):
         ''' sends data the the MIDI output '''
-        # construct message
-        msg = mido.Message('control_change', 
-                           channel=self.midi_channel, 
-                           control=controller,
-                           value=value)
-        # send cc
-        self.port_out.send(msg)
+        # 1st byte changes depending on the midi channel
+        if   (self.midi_channel == 1):  byte1 = 0xB0
+        elif (self.midi_channel == 2):  byte1 = 0xB1
+        elif (self.midi_channel == 3):  byte1 = 0xB2
+        elif (self.midi_channel == 4):  byte1 = 0xB3
+        elif (self.midi_channel == 5):  byte1 = 0xB4
+        elif (self.midi_channel == 6):  byte1 = 0xB5
+        elif (self.midi_channel == 7):  byte1 = 0xB6
+        elif (self.midi_channel == 8):  byte1 = 0xB7
+        elif (self.midi_channel == 9):  byte1 = 0xB8
+        elif (self.midi_channel == 10): byte1 = 0xB9
+        elif (self.midi_channel == 11): byte1 = 0xBA
+        elif (self.midi_channel == 12): byte1 = 0xBB
+        elif (self.midi_channel == 13): byte1 = 0xBC
+        elif (self.midi_channel == 14): byte1 = 0xBD
+        elif (self.midi_channel == 15): byte1 = 0xBE
+        elif (self.midi_channel == 16): byte1 = 0xBF
+        else:
+            raise ValueError('Incorrect value passed to MidiManager.SendCC()')
+        # send CC 
+        self.midi_output_device.send_message([byte1, controller, value])
 
 
 class GlobalSettings(wx.Panel):
@@ -1355,11 +1353,14 @@ class EditorSettings(wx.Panel):
         self.sizer.Add(txt_notes, 0, wx.EXPAND)
         self.sizer.Add(self.btn_confirm, 0, wx.ALIGN_RIGHT)
 
+        # init midi
+        midiManager.InitMIDI()
+
         # populate MIDI information
-        for midi_device in midiManager.ListMIDI('inputs'):
+        for midi_device in midiManager.ListMIDI('input'):
             listbox_midi_in.Append(midi_device)
 
-        for midi_device in midiManager.ListMIDI('outputs'):
+        for midi_device in midiManager.ListMIDI('output'):
             listbox_midi_out.Append(midi_device)          
 
     def OnRemoteChannelSelect(self, event):
@@ -1370,7 +1371,7 @@ class EditorSettings(wx.Panel):
     def OnConfirm(self, event):
         ''' locks the midi output/channel coice for the session '''
         # midi output device is required
-        if (midiManager.GetOutput() == None):
+        if (midiManager.midi_output_device == None):
             errorMsg = wx.MessageDialog(None, 'You must select a MIDI output device!', 'Error', 
                 wx.OK | wx.ICON_ERROR)
             errorMsg.ShowModal()
@@ -1384,7 +1385,6 @@ class EditorSettings(wx.Panel):
         ''' called when the user clicks a midi output device in the listbox '''
         midiManager.SetOutput(event.GetString())
 
-
 class Editor(wx.Notebook):
     ''' all the panels put together in a "notebook" style (with tabs) '''
     def __init__(self, parent):
@@ -1396,10 +1396,7 @@ class Editor(wx.Notebook):
 
     def OnConfirm(self):
         ''' confirms midi device selection '''
-        
-        # no further changes to midiManager allowed
-        midiManager.Lock()
-        
+
         # open midi ports
         midiManager.OpenMIDI()
 
