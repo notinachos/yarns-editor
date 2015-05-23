@@ -1401,7 +1401,7 @@ class Editor(wx.Notebook):
         midiManager.CloseMIDI()
         midiManager.OpenMIDI()
 
-         # add layout panel
+         # add layout panel and switch to it
         self.OnPartChange(0)
         self.ChangeSelection(1)
 
