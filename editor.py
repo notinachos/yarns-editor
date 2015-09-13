@@ -43,7 +43,7 @@ import cc_values
 import images
 
 # the editor only supports this firmware version
-firmware = str(1.02)
+firmware = str(1.1)
 
 # information for the layout editor page
 info_1M = 'In this mode, Yarns offers a single voice of CV/Gate conversion.'
