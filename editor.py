@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-license = '''
+"""
 The MIT License (MIT)
 
 Copyright (c) 2015 Panagiotis Peppas
@@ -24,26 +24,28 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Notice:
-Portions of this software may include text and/or graphics from Mutable Instruments, 
-provided under the cc-by-sa 3.0 license. The author of this software is not 
-endorsed by Mutable Instruments. Their company website, and the license, can be 
-found at the following address: http://mutable-instruments.net/
-'''
+Portions of this software may include text and/or graphics from Mutable
+Instruments, provided under the cc-by-sa 3.0 license. The author of this
+software is not endorsed by Mutable Instruments. Their company website, and
+the license, can be found at the following address:
+http://mutable-instruments.net/
+"""
 
 # imports
-import sys
-import platform
 import ctypes
+import platform
 import random
+import sys
+
 import rtmidi_python as rtmidi
 import wx
-from wx.lib.embeddedimage import PyEmbeddedImage
 from natsort import natsorted
+
 import cc_values
 import images
 
-# the editor only supports this firmware version
-firmware = str(1.1)
+# the editor only supports the following Yarns firmware version:
+firmware = '1.1'
 
 # information for the layout editor page
 info_1M = 'In this mode, Yarns offers a single voice of CV/Gate conversion.'
@@ -65,7 +67,7 @@ info_4P = (
 
 info_2poly = (
     'In this mode, Yarns provides a single part made of two voices. However, only the\n'
-    'first voice is handled by Yarns\' CV/Gate outputs. The second voice is simply\n' 
+    'first voice is handled by Yarns\' CV/Gate outputs. The second voice is simply\n'
     'forwarded as MIDI Note on/off messages the MIDI out. This allows "ping-pong" play\n'
     'between the modules connected to Yarns and another MIDI instrument. This can also\n'
     'be used to chain several instances of Yarns to get more CV outputs.')
@@ -98,9 +100,8 @@ default_midiChannel = '1'
 default_remoteChannel = '16'
 default_lowerNote = '0 - C_0'
 default_upperNote = '127 - G_10'
-default_swing = '0'
 default_legato = 'Off'
-default_portamento = '0'
+default_portamento = 'T0'
 default_pitchBendRange = '2'
 default_vibratoRange = '1'
 default_fineTuning = '0'
@@ -127,8 +128,17 @@ default_auxCV = 'Aftertouch CC#2'
 default_vibratoSpeed = '50'
 
 
-class MidiManager():
-    ''' handles midi events '''
+class MidiManager:
+    """
+    Handles MIDI events.
+
+    @:param midi_channel: the remote control MIDI channel
+    @:param midi_input_device: the hardware used for MIDI input
+    @:param midi_output_device: the hardware used for MIDI output
+    @:param midi_input_port: the MIDI input port
+    @:param midi_output_port: the MIDI output port
+    """
+
     def __init__(self):
         self.midi_channel = None
         self.midi_input_device = None
@@ -137,12 +147,17 @@ class MidiManager():
         self.midi_output_port = None
 
     def InitMIDI(self):
-        ''' initializes midi '''
+        """
+        initializes MIDI.
+        """
         self.midi_input_device = rtmidi.MidiIn()
         self.midi_output_device = rtmidi.MidiOut()
 
     def ListMIDI(self, portDirection):
-        ''' returns a list of available midi devices '''
+        """
+        Returns a list of available midi devices.
+        :return;
+        """
         if (portDirection == 'input'):
             midiDevices = self.midi_input_device.ports
         elif (portDirection == 'output'):
@@ -165,7 +180,7 @@ class MidiManager():
 
     def OpenMIDI(self):
         ''' looks up the ports by the index, and opens them '''
-        if (self.midi_input_port): # midi input device is optional
+        if (self.midi_input_port):  # midi input device is optional
             self.midi_input_device.open_port(
                 self.midi_input_device.ports.index(self.midi_input_port))
         self.midi_output_device.open_port(
@@ -177,24 +192,40 @@ class MidiManager():
         if (self.midi_output_port): self.midi_output_device.close_port()
 
     def SendCC(self, controller, value):
-        ''' sends data the the MIDI output '''
+        ''' sends data to the MIDI output '''
         # 1st byte changes depending on the midi channel
-        if   (self.midi_channel == 1):  byte1 = 0xB0
-        elif (self.midi_channel == 2):  byte1 = 0xB1
-        elif (self.midi_channel == 3):  byte1 = 0xB2
-        elif (self.midi_channel == 4):  byte1 = 0xB3
-        elif (self.midi_channel == 5):  byte1 = 0xB4
-        elif (self.midi_channel == 6):  byte1 = 0xB5
-        elif (self.midi_channel == 7):  byte1 = 0xB6
-        elif (self.midi_channel == 8):  byte1 = 0xB7
-        elif (self.midi_channel == 9):  byte1 = 0xB8
-        elif (self.midi_channel == 10): byte1 = 0xB9
-        elif (self.midi_channel == 11): byte1 = 0xBA
-        elif (self.midi_channel == 12): byte1 = 0xBB
-        elif (self.midi_channel == 13): byte1 = 0xBC
-        elif (self.midi_channel == 14): byte1 = 0xBD
-        elif (self.midi_channel == 15): byte1 = 0xBE
-        elif (self.midi_channel == 16): byte1 = 0xBF
+        if (self.midi_channel == 1):
+            byte1 = 0xB0
+        elif (self.midi_channel == 2):
+            byte1 = 0xB1
+        elif (self.midi_channel == 3):
+            byte1 = 0xB2
+        elif (self.midi_channel == 4):
+            byte1 = 0xB3
+        elif (self.midi_channel == 5):
+            byte1 = 0xB4
+        elif (self.midi_channel == 6):
+            byte1 = 0xB5
+        elif (self.midi_channel == 7):
+            byte1 = 0xB6
+        elif (self.midi_channel == 8):
+            byte1 = 0xB7
+        elif (self.midi_channel == 9):
+            byte1 = 0xB8
+        elif (self.midi_channel == 10):
+            byte1 = 0xB9
+        elif (self.midi_channel == 11):
+            byte1 = 0xBA
+        elif (self.midi_channel == 12):
+            byte1 = 0xBB
+        elif (self.midi_channel == 13):
+            byte1 = 0xBC
+        elif (self.midi_channel == 14):
+            byte1 = 0xBD
+        elif (self.midi_channel == 15):
+            byte1 = 0xBE
+        elif (self.midi_channel == 16):
+            byte1 = 0xBF
         else:
             raise ValueError('Incorrect value passed to MidiManager.SendCC()')
         # send CC 
@@ -203,6 +234,7 @@ class MidiManager():
 
 class LayoutSettings(wx.Panel):
     ''' the configuration page for layout options '''
+
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
         self.parent = parent
@@ -250,7 +282,7 @@ class LayoutSettings(wx.Panel):
 
         # default layout placeholders
         image = images.layout_1M.GetBitmap()
-        self.layout_image = wx.StaticBitmap(self, -1, image, (0,0), (image.GetWidth(), image.GetHeight()))
+        self.layout_image = wx.StaticBitmap(self, -1, image, (0, 0), (image.GetWidth(), image.GetHeight()))
 
         self.txt_info = wx.StaticText(self, label=info_1M)
         self.sizer.Add(wx.StaticText(self, label=''))
@@ -260,52 +292,52 @@ class LayoutSettings(wx.Panel):
     def ChangeLayout(self, layout):
         ''' changes the layout image/text. also enables/disables tabs '''
         # pick correct layout image
-        if   (layout == '1M - Monophonic'):                
+        if (layout == '1M - Monophonic'):
             newImage = images.layout_1M.GetBitmap()
             self.parent.OnPartChange(1)
             self.txt_info.SetLabel(info_1M)
 
-        elif (layout == '2M - Dual monophonic'):           
+        elif (layout == '2M - Dual monophonic'):
             newImage = images.layout_2M.GetBitmap()
             self.parent.OnPartChange(2)
             self.txt_info.SetLabel(info_2M)
 
-        elif (layout == '4M - Quad monophonic'):           
+        elif (layout == '4M - Quad monophonic'):
             newImage = images.layout_4M.GetBitmap()
             self.parent.OnPartChange(4)
             self.txt_info.SetLabel(info_4M)
 
-        elif (layout == '2P - Duophonic'):                 
+        elif (layout == '2P - Duophonic'):
             newImage = images.layout_2P.GetBitmap()
             self.parent.OnPartChange(1)
             self.txt_info.SetLabel(info_2P)
 
-        elif (layout == '4P - Quadraphonic'):              
+        elif (layout == '4P - Quadraphonic'):
             newImage = images.layout_4P.GetBitmap()
             self.parent.OnPartChange(1)
             self.txt_info.SetLabel(info_4poly)
 
-        elif (layout == '2> - Duophonic polychaining'):    
+        elif (layout == '2> - Duophonic polychaining'):
             newImage = images.layout_2P_chain.GetBitmap()
             self.parent.OnPartChange(1)
             self.txt_info.SetLabel(info_2poly)
 
-        elif (layout == '4> - Quadraphonic polychaining'): 
+        elif (layout == '4> - Quadraphonic polychaining'):
             newImage = images.layout_4P_chain.GetBitmap()
             self.parent.OnPartChange(1)
             self.txt_info.SetLabel(info_4poly)
 
-        elif (layout == '8> - Octophonic polychaining'):   
+        elif (layout == '8> - Octophonic polychaining'):
             newImage = images.layout_8P_chain.GetBitmap()
             self.parent.OnPartChange(1)
             self.txt_info.SetLabel(info_8poly)
 
-        elif (layout == '4T - Quad trigger'):              
+        elif (layout == '4T - Quad trigger'):
             newImage = images.layout_4T.GetBitmap()
             self.parent.OnPartChange(4)
             self.txt_info.SetLabel(info_4trig)
 
-        elif (layout == '3+ - Three plus one'):            
+        elif (layout == '3+ - Three plus one'):
             newImage = images.layout_3plus.GetBitmap()
             self.parent.OnPartChange(2)
             self.txt_info.SetLabel(info_3plus)
@@ -322,9 +354,12 @@ class LayoutSettings(wx.Panel):
     def OnTempoSelect(self, event):
         ''' called when the user selects a value from the combobox '''
         # get event type
-        if (event == 'default'): choice = default_tempo 
-        elif (event == 'random'): choice = random.choice(cc_values.tempo.keys())
-        else: choice = event.GetString() 
+        if (event == 'default'):
+            choice = default_tempo
+        elif (event == 'random'):
+            choice = random.choice(cc_values.tempo.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_tempo.SetValue(choice)
         # set controller
@@ -337,31 +372,37 @@ class LayoutSettings(wx.Panel):
     def OnSwingSelect(self, event):
         ''' called when the user selects a value from the combobox '''
         # get event type
-        if (event == 'default'): choice = default_swing
-        elif (event == 'random'): choice = random.choice(cc_values.swing.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_swing
+        elif (event == 'random'):
+            choice = random.choice(cc_values.swing.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_swing.SetValue(choice)
         # set controller
         controller = cc_values.controllers['yarns_swing']
         # set cc value
         value = cc_values.swing[choice]
-         # send cc message to midi output
+        # send cc message to midi output
         midiManager.SendCC(controller, value)
 
     def OnLayoutSelect(self, event):
         ''' called when the user selects a value from the combobox '''
         # get event type
-        if (event == 'default'): choice = default_layout
-        elif (event == 'random'): choice = random.choice(cc_values.layout.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_layout
+        elif (event == 'random'):
+            choice = random.choice(cc_values.layout.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_layouts.SetValue(choice)
         # set controller
         controller = cc_values.controllers['yarns_layout']
         # set cc value
         value = cc_values.layout[choice]
-         # send cc message to midi output
+        # send cc message to midi output
         midiManager.SendCC(controller, value)
 
         # change layout image/text
@@ -376,6 +417,7 @@ class LayoutSettings(wx.Panel):
 
 class PartSettings(wx.Panel):
     ''' the configuration page for a single part '''
+
     def __init__(self, parent, partNumber):
         wx.Panel.__init__(self, parent)
         # the part number (1-4) that the page controls
@@ -384,7 +426,7 @@ class PartSettings(wx.Panel):
         self.checkedBoxes = []
         # setup the GUI
         self.InitGUI()
-        
+
     def InitGUI(self):
         ''' initializes the graphic elements '''
         # rows, columns, vertical gap, horizontal gap
@@ -483,6 +525,11 @@ class PartSettings(wx.Panel):
         for each in cc_values.note_priority:
             note_priority_menu.append(each)
         note_priority_menu = natsorted(note_priority_menu)
+
+        portamento_menu = []
+        for each in cc_values.portamento:
+            portamento_menu.append(each)
+        portamento_menu = natsorted(portamento_menu)
 
         boolean_menu = []
         for each in cc_values.boolean:
@@ -609,7 +656,7 @@ class PartSettings(wx.Panel):
             self, choices=pitchBend_menu, value=default_pitchBendRange, style=wx.CB_READONLY)
 
         self.cbox_portamento = wx.ComboBox(
-            self, choices=swing_menu, value=default_portamento, style=wx.CB_READONLY)
+            self, choices=portamento_menu, value=default_portamento, style=wx.CB_READONLY)
 
         self.cbox_midiChannel = wx.ComboBox(
             self, choices=midiChannel_menu, value=default_midiChannel, style=wx.CB_READONLY)
@@ -633,7 +680,7 @@ class PartSettings(wx.Panel):
             self, choices=note_priority_menu, value=default_priority, style=wx.CB_READONLY)
 
         self.cbox_legato = wx.ComboBox(
-            self, choices=boolean_menu, value=default_legato, style=wx.CB_READONLY)        
+            self, choices=boolean_menu, value=default_legato, style=wx.CB_READONLY)
 
         self.cbox_tuningRoot = wx.ComboBox(
             self, choices=tuningRoot_menu, value=default_tuningRoot, style=wx.CB_READONLY)
@@ -658,7 +705,7 @@ class PartSettings(wx.Panel):
 
         self.cbox_arpDirection = wx.ComboBox(
             self, choices=arpDirection_menu, value=default_arpDirection, style=wx.CB_READONLY)
-        
+
         # combo box bindings
         self.cbox_pitchBendRange.Bind(wx.EVT_COMBOBOX, self.OnPitchBendRangeSelect)
         self.cbox_vibratoRange.Bind(wx.EVT_COMBOBOX, self.OnVibratoRangeSelect)
@@ -688,7 +735,7 @@ class PartSettings(wx.Panel):
         self.cbox_oscShape.Bind(wx.EVT_COMBOBOX, self.OnOscShapeSelect)
         self.cbox_arpClockDiv.Bind(wx.EVT_COMBOBOX, self.OnArpClockDivSelect)
         self.cbox_arpDirection.Bind(wx.EVT_COMBOBOX, self.OnArpDirectionSelect)
-        
+
         # randomize buttons
         btn_randomSelection = wx.Button(self, label='Randomize selected')
         btn_randomSelection.Bind(wx.EVT_BUTTON, self.OnRandomSelection)
@@ -698,21 +745,21 @@ class PartSettings(wx.Panel):
 
         # add all items to the 4 column grid created earlier
         grid.AddMany([
-            (chk_midiChannel),    (self.cbox_midiChannel),    (chk_midiOutMode),     (self.cbox_midiOutMode),
-            (chk_lowerNote),      (self.cbox_lowerNote),      (chk_voicing),         (self.cbox_voicing),
-            (chk_upperNote),      (self.cbox_upperNote),      (chk_notePriority),    (self.cbox_notePriority),
-            (chk_portamento),     (self.cbox_portamento),     (chk_legato),          (self.cbox_legato),
-            (chk_pitchBendRange), (self.cbox_pitchBendRange), (chk_vibratoRange),    (self.cbox_vibratoRange),
-            (chk_transpose),      (self.cbox_transpose),      (chk_vibratoSpeed),    (self.cbox_vibratoSpeed),
-            (chk_fineTuning),     (self.cbox_fineTuning),     (chk_velocityScale),   (self.cbox_velocityScale),
-            (chk_tuningSystem),   (self.cbox_tuningSystem),   (chk_triggerDuration), (self.cbox_triggerDuration),
-            (chk_tuningRoot),     (self.cbox_tuningRoot),     (chk_triggerShape),    (self.cbox_triggerShape),
-            (chk_arpGateLength),  (self.cbox_arpGateLength),  (chk_oscShape),        (self.cbox_oscShape),
-            (chk_arpClockDiv),    (self.cbox_arpClockDiv),    (chk_auxCvOut),        (self.cbox_auxCvOut),
-            (chk_arpRange),       (self.cbox_arpRange),       (chk_eucLength),       (self.cbox_eucLength),
-            (chk_arpDirection),   (self.cbox_arpDirection),   (chk_eucFill),         (self.cbox_eucFill),
-            (chk_arpPattern),     (self.cbox_arpPattern),     (chk_eucRotate),       (self.cbox_eucRotate),
-            (0,0),                (0,0),                      (btn_randomSelection), (btn_reset)])
+            (chk_midiChannel), (self.cbox_midiChannel), (chk_midiOutMode), (self.cbox_midiOutMode),
+            (chk_lowerNote), (self.cbox_lowerNote), (chk_voicing), (self.cbox_voicing),
+            (chk_upperNote), (self.cbox_upperNote), (chk_notePriority), (self.cbox_notePriority),
+            (chk_portamento), (self.cbox_portamento), (chk_legato), (self.cbox_legato),
+            (chk_pitchBendRange), (self.cbox_pitchBendRange), (chk_vibratoRange), (self.cbox_vibratoRange),
+            (chk_transpose), (self.cbox_transpose), (chk_vibratoSpeed), (self.cbox_vibratoSpeed),
+            (chk_fineTuning), (self.cbox_fineTuning), (chk_velocityScale), (self.cbox_velocityScale),
+            (chk_tuningSystem), (self.cbox_tuningSystem), (chk_triggerDuration), (self.cbox_triggerDuration),
+            (chk_tuningRoot), (self.cbox_tuningRoot), (chk_triggerShape), (self.cbox_triggerShape),
+            (chk_arpGateLength), (self.cbox_arpGateLength), (chk_oscShape), (self.cbox_oscShape),
+            (chk_arpClockDiv), (self.cbox_arpClockDiv), (chk_auxCvOut), (self.cbox_auxCvOut),
+            (chk_arpRange), (self.cbox_arpRange), (chk_eucLength), (self.cbox_eucLength),
+            (chk_arpDirection), (self.cbox_arpDirection), (chk_eucFill), (self.cbox_eucFill),
+            (chk_arpPattern), (self.cbox_arpPattern), (chk_eucRotate), (self.cbox_eucRotate),
+            (0, 0), (0, 0), (btn_randomSelection), (btn_reset)])
 
     def OnBoxChecked(self, event):
         ''' a checkbox was checked '''
@@ -729,34 +776,62 @@ class PartSettings(wx.Panel):
     def OnRandomSelection(self, event):
         ''' randomizes all currently checked boxes '''
         for box in self.checkedBoxes:
-            if   (box == 'MIDI channel:'): self.OnChannelSelect('random')
-            elif (box == 'Lower note:'): self.OnLowerNoteSelect('random')
-            elif (box == 'Upper note:'): self.OnUpperNoteSelect('random')
-            elif (box == 'Portamento:'): self.OnPortamentoSelect('random')
-            elif (box == 'Pitch bend range:'): self.OnPitchBendRangeSelect('random')
-            elif (box == 'Transpose:'): self.OnTransposeSelect('random')
-            elif (box == 'Fine tuning:'): self.OnFineTuningSelect('random')
-            elif (box == 'Tuning system:'): self.OnTuningSystemSelect('random')
-            elif (box == 'Tuning root:'): self.OnTuningRootSelect('random')
-            elif (box == 'Arp/Seq gate length:'): self.OnArpGateLengthSelect('random')
-            elif (box == 'Arp/Seq clock divider:'): self.OnArpClockDivSelect('random')
-            elif (box == 'Arpeggiator range:'): self.OnArpRangeSelect('random')
-            elif (box == 'Arpeggiator direction:'): self.OnArpDirectionSelect('random')
-            elif (box == 'Arpeggiator pattern:'): self.OnArpPatternSelect('random')
-            elif (box == 'MIDI out mode:'): self.OnMidiOutModeSelect('random')
-            elif (box == 'Voicing:'): self.OnVoicingSelect('random')
-            elif (box == 'Note priority:'): self.OnNotePrioritySelect('random')
-            elif (box == 'Legato:'): self.OnLegatoSelect('random')
-            elif (box == 'Vibrato range:'): self.OnVibratoRangeSelect('random')
-            elif (box == 'Vibrato speed:'): self.OnVibratoSpeedSelect('random')
-            elif (box == 'Trigger velocity scale:'): self.OnVelocityScaleSelect('random')
-            elif (box == 'Trigger duration:'): self.OnTriggerDurationSelect('random')
-            elif (box == 'Trigger shape:'): self.OnTriggerShapeSelect('random')
-            elif (box == 'Oscillator shape:'): self.OnOscShapeSelect('random')
-            elif (box == 'Aux CV out:'): self.OnAuxCvOutSelect('random')
-            elif (box == 'Euclidean length:'): self.OnEucLengthSelect('random')
-            elif (box == 'Euclidean fill:'): self.OnEucFillSelect('random')
-            elif (box == 'Euclidean rotate:'): self.OnEucRotateSelect('random')
+            if (box == 'MIDI channel:'):
+                self.OnChannelSelect('random')
+            elif (box == 'Lower note:'):
+                self.OnLowerNoteSelect('random')
+            elif (box == 'Upper note:'):
+                self.OnUpperNoteSelect('random')
+            elif (box == 'Portamento:'):
+                self.OnPortamentoSelect('random')
+            elif (box == 'Pitch bend range:'):
+                self.OnPitchBendRangeSelect('random')
+            elif (box == 'Transpose:'):
+                self.OnTransposeSelect('random')
+            elif (box == 'Fine tuning:'):
+                self.OnFineTuningSelect('random')
+            elif (box == 'Tuning system:'):
+                self.OnTuningSystemSelect('random')
+            elif (box == 'Tuning root:'):
+                self.OnTuningRootSelect('random')
+            elif (box == 'Arp/Seq gate length:'):
+                self.OnArpGateLengthSelect('random')
+            elif (box == 'Arp/Seq clock divider:'):
+                self.OnArpClockDivSelect('random')
+            elif (box == 'Arpeggiator range:'):
+                self.OnArpRangeSelect('random')
+            elif (box == 'Arpeggiator direction:'):
+                self.OnArpDirectionSelect('random')
+            elif (box == 'Arpeggiator pattern:'):
+                self.OnArpPatternSelect('random')
+            elif (box == 'MIDI out mode:'):
+                self.OnMidiOutModeSelect('random')
+            elif (box == 'Voicing:'):
+                self.OnVoicingSelect('random')
+            elif (box == 'Note priority:'):
+                self.OnNotePrioritySelect('random')
+            elif (box == 'Legato:'):
+                self.OnLegatoSelect('random')
+            elif (box == 'Vibrato range:'):
+                self.OnVibratoRangeSelect('random')
+            elif (box == 'Vibrato speed:'):
+                self.OnVibratoSpeedSelect('random')
+            elif (box == 'Trigger velocity scale:'):
+                self.OnVelocityScaleSelect('random')
+            elif (box == 'Trigger duration:'):
+                self.OnTriggerDurationSelect('random')
+            elif (box == 'Trigger shape:'):
+                self.OnTriggerShapeSelect('random')
+            elif (box == 'Oscillator shape:'):
+                self.OnOscShapeSelect('random')
+            elif (box == 'Aux CV out:'):
+                self.OnAuxCvOutSelect('random')
+            elif (box == 'Euclidean length:'):
+                self.OnEucLengthSelect('random')
+            elif (box == 'Euclidean fill:'):
+                self.OnEucFillSelect('random')
+            elif (box == 'Euclidean rotate:'):
+                self.OnEucRotateSelect('random')
             else:
                 raise ValueError('Incorrect value passed to PartSettings.OnRandomSelection()')
 
@@ -767,448 +842,623 @@ class PartSettings(wx.Panel):
     def OnChannelSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_midiChannel
-        elif (event == 'random'): choice = random.choice(cc_values.channel.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_midiChannel
+        elif (event == 'random'):
+            choice = random.choice(cc_values.channel.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_midiChannel.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_midiChannel']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_midiChannel']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_midiChannel']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_midiChannel']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_midiChannel']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_midiChannel']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_midiChannel']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_midiChannel']
         # set value
         value = cc_values.channel[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnLowerNoteSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_lowerNote
-        elif (event == 'random'): choice = random.choice(cc_values.note.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_lowerNote
+        elif (event == 'random'):
+            choice = random.choice(cc_values.note.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_lowerNote.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_lowerNote']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_lowerNote']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_lowerNote']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_lowerNote']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_lowerNote']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_lowerNote']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_lowerNote']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_lowerNote']
         # set value
         value = cc_values.note[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnUpperNoteSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_upperNote
-        elif (event == 'random'): choice = random.choice(cc_values.note.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_upperNote
+        elif (event == 'random'):
+            choice = random.choice(cc_values.note.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_upperNote.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_upperNote']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_upperNote']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_upperNote']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_upperNote']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_upperNote']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_upperNote']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_upperNote']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_upperNote']
         # set value
         value = cc_values.note[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnMidiOutModeSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_mode
-        elif (event == 'random'): choice = random.choice(cc_values.midi_output.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_mode
+        elif (event == 'random'):
+            choice = random.choice(cc_values.midi_output.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_midiOutMode.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_midiOutMode']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_midiOutMode']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_midiOutMode']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_midiOutMode']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_midiOutMode']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_midiOutMode']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_midiOutMode']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_midiOutMode']
         # set value
         value = cc_values.midi_output[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnVoicingSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_voicing
-        elif (event == 'random'): choice = random.choice(cc_values.voicing.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_voicing
+        elif (event == 'random'):
+            choice = random.choice(cc_values.voicing.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_voicing.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_voicing']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_voicing']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_voicing']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_voicing']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_voicing']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_voicing']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_voicing']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_voicing']
         # set value
         value = cc_values.voicing[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnNotePrioritySelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_priority
-        elif (event == 'random'): choice = random.choice(cc_values.note_priority.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_priority
+        elif (event == 'random'):
+            choice = random.choice(cc_values.note_priority.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_notePriority.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_notePriority']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_notePriority']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_notePriority']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_notePriority']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_notePriority']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_notePriority']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_notePriority']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_notePriority']
         # set value
         value = cc_values.note_priority[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnPortamentoSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_portamento
-        elif (event == 'random'): choice = random.choice(cc_values.portamento.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_portamento
+        elif (event == 'random'):
+            choice = random.choice(cc_values.portamento.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_portamento.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_portamento']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_portamento']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_portamento']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_portamento']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_portamento']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_portamento']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_portamento']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_portamento']
         # set value
-        value = cc_values.portamento[choice] # portamento uses same cc values as swing
+        value = cc_values.portamento[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnLegatoSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_legato
-        elif (event == 'random'): choice = random.choice(cc_values.boolean.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_legato
+        elif (event == 'random'):
+            choice = random.choice(cc_values.boolean.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_legato.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_legato']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_legato']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_legato']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_legato']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_legato']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_legato']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_legato']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_legato']
         # set value
         value = cc_values.boolean[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnPitchBendRangeSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_pitchBendRange
-        elif (event == 'random'): choice = random.choice(cc_values.pitch_bend.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_pitchBendRange
+        elif (event == 'random'):
+            choice = random.choice(cc_values.pitch_bend.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_pitchBendRange.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_pitchBendRange']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_pitchBendRange']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_pitchBendRange']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_pitchBendRange']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_pitchBendRange']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_pitchBendRange']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_pitchBendRange']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_pitchBendRange']
         # set value
         value = cc_values.pitch_bend[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnVibratoRangeSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_vibratoRange
-        elif (event == 'random'): choice = random.choice(cc_values.vibrato_range.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_vibratoRange
+        elif (event == 'random'):
+            choice = random.choice(cc_values.vibrato_range.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_vibratoRange.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_vibratoRange']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_vibratoRange']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_vibratoRange']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_vibratoRange']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_vibratoRange']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_vibratoRange']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_vibratoRange']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_vibratoRange']
         # set value
         value = cc_values.vibrato_range[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnVibratoSpeedSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_vibratoSpeed
-        elif (event == 'random'): choice = random.choice(cc_values.vibrato_speed.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_vibratoSpeed
+        elif (event == 'random'):
+            choice = random.choice(cc_values.vibrato_speed.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_vibratoSpeed.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_vibratoSpeed']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_vibratoSpeed']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_vibratoSpeed']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_vibratoSpeed']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_vibratoSpeed']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_vibratoSpeed']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_vibratoSpeed']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_vibratoSpeed']
         # set value
         value = cc_values.vibrato_speed[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnTransposeSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_transpose
-        elif (event == 'random'): choice = random.choice(cc_values.transpose.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_transpose
+        elif (event == 'random'):
+            choice = random.choice(cc_values.transpose.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_transpose.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_transpose']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_transpose']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_transpose']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_transpose']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_transpose']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_transpose']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_transpose']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_transpose']
         # set value
         value = cc_values.transpose[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnFineTuningSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_fineTuning
-        elif (event == 'random'): choice = random.choice(cc_values.fine_tuning.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_fineTuning
+        elif (event == 'random'):
+            choice = random.choice(cc_values.fine_tuning.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_fineTuning.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_fineTuning']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_fineTuning']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_fineTuning']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_fineTuning']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_fineTuning']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_fineTuning']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_fineTuning']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_fineTuning']
         # set value
         value = cc_values.fine_tuning[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnTuningRootSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_tuningRoot
-        elif (event == 'random'): choice = random.choice(cc_values.tuning_root.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_tuningRoot
+        elif (event == 'random'):
+            choice = random.choice(cc_values.tuning_root.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_tuningRoot.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_tuningRoot']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_tuningRoot']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_tuningRoot']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_tuningRoot']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_tuningRoot']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_tuningRoot']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_tuningRoot']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_tuningRoot']
         # set value
         value = cc_values.tuning_root[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnTuningSystemSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_tuningSystem
-        elif (event == 'random'): choice = random.choice(cc_values.tuning_system.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_tuningSystem
+        elif (event == 'random'):
+            choice = random.choice(cc_values.tuning_system.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_tuningSystem.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_tuningSystem']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_tuningSystem']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_tuningSystem']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_tuningSystem']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_tuningSystem']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_tuningSystem']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_tuningSystem']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_tuningSystem']
         # set value
         value = cc_values.tuning_system[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnTriggerDurationSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_triggerDuration
-        elif (event == 'random'): choice = random.choice(cc_values.trigger_duration.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_triggerDuration
+        elif (event == 'random'):
+            choice = random.choice(cc_values.trigger_duration.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_triggerDuration.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_triggerDuration']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_triggerDuration']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_triggerDuration']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_triggerDuration']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_triggerDuration']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_triggerDuration']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_triggerDuration']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_triggerDuration']
         # set value
         value = cc_values.trigger_duration[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnVelocityScaleSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_velocityScale
-        elif (event == 'random'): choice = random.choice(cc_values.boolean.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_velocityScale
+        elif (event == 'random'):
+            choice = random.choice(cc_values.boolean.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_velocityScale.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_velocityScale']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_velocityScale']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_velocityScale']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_velocityScale']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_velocityScale']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_velocityScale']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_velocityScale']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_velocityScale']
         # set value
         value = cc_values.boolean[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnTriggerShapeSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_triggerShape
-        elif (event == 'random'): choice = random.choice(cc_values.trigger_shape.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_triggerShape
+        elif (event == 'random'):
+            choice = random.choice(cc_values.trigger_shape.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_triggerShape.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_triggerShape']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_triggerShape']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_triggerShape']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_triggerShape']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_triggerShape']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_triggerShape']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_triggerShape']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_triggerShape']
         # set value
         value = cc_values.trigger_shape[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnAuxCvOutSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_auxCV
-        elif (event == 'random'): choice = random.choice(cc_values.aux_cv.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_auxCV
+        elif (event == 'random'):
+            choice = random.choice(cc_values.aux_cv.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_auxCvOut.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_auxCVout']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_auxCVout']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_auxCVout']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_auxCVout']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_auxCVout']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_auxCVout']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_auxCVout']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_auxCVout']
         # set value
         value = cc_values.aux_cv[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnOscShapeSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_oscillator
-        elif (event == 'random'): choice = random.choice(cc_values.oscillator.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_oscillator
+        elif (event == 'random'):
+            choice = random.choice(cc_values.oscillator.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_oscShape.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_oscillatorShape']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_oscillatorShape']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_oscillatorShape']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_oscillatorShape']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_oscillatorShape']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_oscillatorShape']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_oscillatorShape']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_oscillatorShape']
         # set value
         value = cc_values.oscillator[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnArpClockDivSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_arpClockDiv
-        elif (event == 'random'): choice = random.choice(cc_values.arp_clock_division.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_arpClockDiv
+        elif (event == 'random'):
+            choice = random.choice(cc_values.arp_clock_division.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_arpClockDiv.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_arpClockDiv']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_arpClockDiv']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_arpClockDiv']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_arpClockDiv']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_arpClockDiv']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_arpClockDiv']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_arpClockDiv']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_arpClockDiv']
         # set value
         value = cc_values.arp_clock_division[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnArpGateLengthSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_arpGateLength
-        elif (event == 'random'): choice = random.choice(cc_values.arp_gate_length.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_arpGateLength
+        elif (event == 'random'):
+            choice = random.choice(cc_values.arp_gate_length.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_arpGateLength.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_arpGateLength']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_arpGateLength']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_arpGateLength']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_arpGateLength']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_arpGateLength']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_arpGateLength']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_arpGateLength']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_arpGateLength']
         # set value
         value = cc_values.arp_gate_length[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnArpRangeSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_arpRange
-        elif (event == 'random'): choice = random.choice(cc_values.arp_range.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_arpRange
+        elif (event == 'random'):
+            choice = random.choice(cc_values.arp_range.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_arpRange.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_arpRange']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_arpRange']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_arpRange']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_arpRange']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_arpRange']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_arpRange']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_arpRange']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_arpRange']
         # set value
         value = cc_values.arp_range[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnArpDirectionSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_arpDirection
-        elif (event == 'random'): choice = random.choice(cc_values.arp_direction.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_arpDirection
+        elif (event == 'random'):
+            choice = random.choice(cc_values.arp_direction.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_arpDirection.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_arpDirection']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_arpDirection']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_arpDirection']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_arpDirection']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_arpDirection']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_arpDirection']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_arpDirection']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_arpDirection']
         # set value
         value = cc_values.arp_direction[choice]
         # send value to midi output
         midiManager.SendCC(controller, value)
-    
+
     def OnArpPatternSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_arpPattern
-        elif (event == 'random'): choice = random.choice(cc_values.arp_pattern.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_arpPattern
+        elif (event == 'random'):
+            choice = random.choice(cc_values.arp_pattern.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_arpPattern.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_arpPattern']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_arpPattern']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_arpPattern']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_arpPattern']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_arpPattern']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_arpPattern']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_arpPattern']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_arpPattern']
         # set value
         value = cc_values.arp_pattern[choice]
         # send value to midi output
@@ -1217,16 +1467,23 @@ class PartSettings(wx.Panel):
     def OnEucLengthSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_eucLength
-        elif (event == 'random'): choice = random.choice(cc_values.euclidean.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_eucLength
+        elif (event == 'random'):
+            choice = random.choice(cc_values.euclidean.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_eucLength.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_euclideanLength']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_euclideanLength']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_euclideanLength']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_euclideanLength']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_euclideanLength']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_euclideanLength']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_euclideanLength']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_euclideanLength']
         # set value
         value = cc_values.euclidean[choice]
         # send value to midi output
@@ -1235,16 +1492,23 @@ class PartSettings(wx.Panel):
     def OnEucFillSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_eucFill
-        elif (event == 'random'): choice = random.choice(cc_values.euclidean.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_eucFill
+        elif (event == 'random'):
+            choice = random.choice(cc_values.euclidean.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_eucFill.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_euclideanFill']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_euclideanFill']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_euclideanFill']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_euclideanFill']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_euclideanFill']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_euclideanFill']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_euclideanFill']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_euclideanFill']
         # set value
         value = cc_values.euclidean[choice]
         # send value to midi output
@@ -1253,16 +1517,23 @@ class PartSettings(wx.Panel):
     def OnEucRotateSelect(self, event):
         ''' combobox '''
         # get event type
-        if (event == 'default'): choice = default_eucRotate
-        elif (event == 'random'): choice = random.choice(cc_values.euclidean.keys())
-        else: choice = event.GetString()
+        if (event == 'default'):
+            choice = default_eucRotate
+        elif (event == 'random'):
+            choice = random.choice(cc_values.euclidean.keys())
+        else:
+            choice = event.GetString()
         # correct combobox value 
         self.cbox_eucRotate.SetValue(choice)
         # set controller
-        if   (self.partNumber == 1): controller = cc_values.controllers['part1_euclideanRotate']
-        elif (self.partNumber == 2): controller = cc_values.controllers['part2_euclideanRotate']
-        elif (self.partNumber == 3): controller = cc_values.controllers['part3_euclideanRotate']
-        elif (self.partNumber == 4): controller = cc_values.controllers['part4_euclideanRotate']
+        if (self.partNumber == 1):
+            controller = cc_values.controllers['part1_euclideanRotate']
+        elif (self.partNumber == 2):
+            controller = cc_values.controllers['part2_euclideanRotate']
+        elif (self.partNumber == 3):
+            controller = cc_values.controllers['part3_euclideanRotate']
+        elif (self.partNumber == 4):
+            controller = cc_values.controllers['part4_euclideanRotate']
         # set value
         value = cc_values.euclidean[choice]
         # send value to midi output
@@ -1302,6 +1573,7 @@ class PartSettings(wx.Panel):
 
 class EditorSettings(wx.Panel):
     ''' the editor's configuration page '''
+
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
         self.parent = parent
@@ -1312,8 +1584,8 @@ class EditorSettings(wx.Panel):
         grid = wx.FlexGridSizer(28, 2, 8, 16)
 
         # column, proportion
-        grid.AddGrowableCol(0,1)
-        grid.AddGrowableCol(1,1)
+        grid.AddGrowableCol(0, 1)
+        grid.AddGrowableCol(1, 1)
 
         # midi input devices
         txt_midi_in = wx.StaticText(self, label='MIDI Input Device:')
@@ -1334,19 +1606,19 @@ class EditorSettings(wx.Panel):
         spin_channel.SetRange(1, 16)
 
         # notes
-        txt_notes = wx.StaticText(self, label='Set MIDI channel to match Yarns RC channel.\n' + 
+        txt_notes = wx.StaticText(self, label='Set MIDI channel to match Yarns RC channel.\n' +
                                               'Restart program to refresh attached devices.\n' +
-                                              'This program only supports firmware %s' %(firmware))
+                                              'This program only supports firmware %s' % (firmware))
         # select button
         self.btn_confirm = wx.Button(self, label='Confirm Settings')
         self.btn_confirm.Bind(wx.EVT_BUTTON, self.OnConfirm)
 
         # add it all to the grid sizer
         grid.AddMany([
-            (txt_midi_in),                   (txt_midi_out),
+            (txt_midi_in), (txt_midi_out),
             (listbox_midi_in, 1, wx.EXPAND), (listbox_midi_out, 1, wx.EXPAND),
-            (txt_channel),                   (wx.StaticText(self, label='')),
-            (spin_channel),                  (wx.StaticText(self, label=''))])
+            (txt_channel), (wx.StaticText(self, label='')),
+            (spin_channel), (wx.StaticText(self, label=''))])
 
         # add grid sizer to sizer
         self.sizer.Add(grid, 1, wx.EXPAND)
@@ -1361,7 +1633,7 @@ class EditorSettings(wx.Panel):
             listbox_midi_in.Append(midi_device)
 
         for midi_device in midiManager.ListMIDI('output'):
-            listbox_midi_out.Append(midi_device)          
+            listbox_midi_out.Append(midi_device)
 
     def OnRemoteChannelSelect(self, event):
         ''' selects the midi channel '''
@@ -1372,10 +1644,11 @@ class EditorSettings(wx.Panel):
         ''' locks the midi output/channel coice for the session '''
         # midi output device is required
         if (midiManager.midi_output_port == None):
-            errorMsg = wx.MessageDialog(None, 'You must select a MIDI output device!', 'Error', 
-                wx.OK | wx.ICON_ERROR)
+            errorMsg = wx.MessageDialog(None, 'You must select a MIDI output device!', 'Error',
+                                        wx.OK | wx.ICON_ERROR)
             errorMsg.ShowModal()
-        else: self.parent.OnConfirm() # parent function handles this
+        else:
+            self.parent.OnConfirm()  # parent function handles this
 
     def OnInputClick(self, event):
         ''' called when the user clicks a midi input device in the listbox'''
@@ -1385,8 +1658,10 @@ class EditorSettings(wx.Panel):
         ''' called when the user clicks a midi output device in the listbox '''
         midiManager.SetOutput(event.GetString())
 
+
 class Editor(wx.Notebook):
     ''' all the panels put together in a "notebook" style (with tabs) '''
+
     def __init__(self, parent):
         wx.Notebook.__init__(self, parent, id=wx.ID_ANY, style=wx.BK_TOP)
 
@@ -1401,7 +1676,7 @@ class Editor(wx.Notebook):
         midiManager.CloseMIDI()
         midiManager.OpenMIDI()
 
-         # add layout panel and switch to it
+        # add layout panel and switch to it
         self.OnPartChange(0)
         self.ChangeSelection(1)
 
@@ -1463,14 +1738,15 @@ class Editor(wx.Notebook):
                 page_part2.SendDefaults()
                 page_part3.SendDefaults()
                 page_part4.SendDefaults()
-        else: 
+        else:
             raise ValueError('Incorrect value passed to Editor.OnPartChange()')
 
 
 class Window(wx.Frame):
     ''' the application window. '''
+
     def __init__(self):
-        wx.Frame.__init__(self, 
+        wx.Frame.__init__(self,
                           parent=None,
                           title='Yarns Editor',
                           style=wx.DEFAULT_FRAME_STYLE)
@@ -1506,7 +1782,7 @@ class Window(wx.Frame):
         notebook = Editor(panel)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(notebook, 1, wx.EXPAND)
-        sizer.Layout() # causes black box glitch if omitted
+        sizer.Layout()  # causes black box glitch if omitted
         panel.SetSizer(sizer)
         self.Layout()
         self.Centre()
@@ -1542,12 +1818,13 @@ class Window(wx.Frame):
         info = wx.AboutDialogInfo()
         info.SetIcon(images.icon.GetIcon())
         info.Name = 'Yarns Editor'
-        info.Version = '0.9'
+        info.Version = '0.9.1'
         info.Copyright = '(C) 2015 Panagiotis Peppas'
-        info.License = license
+        info.License = 'The MIT License. See source code for full license.'
         info.Description = 'A MIDI editor for Mutable Instruments Yarns.'
         info.WebSite = ('https://github.com/notinachos/yarns-editor', 'Source code on Github')
         wx.AboutBox(info)
+
 
 if __name__ == '__main__':
     global midiManager

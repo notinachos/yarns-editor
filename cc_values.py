@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-'''
+"""
 The MIT License (MIT)
 
 Copyright (c) 2015 Panagiotis Peppas
@@ -24,11 +24,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Notice:
-Portions of this software may include text and/or graphics from Mutable Instruments, 
-provided under the cc-by-sa 3.0 license. The author of this software is not 
-endorsed by Mutable Instruments. Their company website, and the license, can be 
-found at the following address: http://mutable-instruments.net/
-'''
+Portions of this software may include text and/or graphics from Mutable
+Instruments, provided under the cc-by-sa 3.0 license. The author of this
+software is not endorsed by Mutable Instruments. Their company website, and
+the license, can be found at the following address:
+http://mutable-instruments.net/
+"""
 
 # cc map 
 controllers = {

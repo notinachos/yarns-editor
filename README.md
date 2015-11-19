@@ -13,7 +13,6 @@ Usage is simple:
 * Yarns is deep, and editing complex layouts via the encoder can be cumbersome.  This program makes editing Yarns a snap!
 * Open source! Free!
 * Randomize anything! Generate complex arpeggios and Euclidean patterns with the click of a button!
-* Prolong your encoder lifespan! Combined, there are over 1,000 potential values for EACH part, and Yarns has up to four parts. This program saves your encoder from a ton of clicking and spinning.
 * Cross platform! Works on Windows, Mac, & Linux!
 
 ## Dependencies:
@@ -22,4 +21,10 @@ Usage is simple:
 * rtmidi-python: https://github.com/superquadratic/rtmidi-python
 * natsort: https://pypi.python.org/pypi/natsort
 
-
+## Dev Environment Setup:
+Want to hack on this project? Setup is pretty simple.
+* Install Python: download and install the latest version of Python2: https://www.python.org/
+* Install wxPython: download and install the latest 32 bit version of wxPython: http://www.wxpython.org/
+* Open a command prompt/terminal and upgrade pip: python -m pip install --upgrade pip
+* Then run this to install the required modules: pip install rtmidi-python natsort
+* Ready to go! Open a command prompt/terminal, change to the project directory, and run: python editor.py
