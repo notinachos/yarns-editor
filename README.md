@@ -1,5 +1,5 @@
 # yarns-editor
-A software MIDI editor for Mutable Insturments Yarns
+A software MIDI editor for Mutable Instruments Yarns
 
 ## Usage:
 Usage is simple:
@@ -22,7 +22,6 @@ Usage is simple:
 * natsort: https://pypi.python.org/pypi/natsort
 
 ## Dev Environment Setup:
-Want to hack on this project? Setup is pretty simple.
 * Install Python: download and install the latest version of Python2: https://www.python.org/
 * Install wxPython: download and install the latest 32 bit version of wxPython: http://www.wxpython.org/
 * Open a command prompt/terminal and upgrade pip: python -m pip install --upgrade pip
